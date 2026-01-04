@@ -1,0 +1,311 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USUÁRIOS ====================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatarUrl String?
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  foods            Food[]
+  meals            Meal[]
+  diets            Diet[]
+  micronutrients   Micronutrient[]
+  trainings        Training[]
+  trainingSessions TrainingSession[]
+  exercises        Exercise[]
+  bodyMeasurements BodyMeasurement[]
+  progressImages   ProgressImage[]
+
+  @@map("users")
+}
+
+// ==================== NUTRIÇÃO ====================
+model Food {
+  id          String   @id @default(uuid())
+  name        String
+  brand       String?
+  servingSize Float    // em gramas
+  servingUnit String   @default("g")
+  
+  // Macronutrientes (obrigatórios)
+  calories      Float
+  proteins      Float
+  carbohydrates Float
+  fats          Float
+  fiber         Float?
+  sodium        Float?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  mealFoods          MealFood[]
+  foodMicronutrients FoodMicronutrient[]
+
+  @@map("foods")
+}
+
+model Micronutrient {
+  id     String @id @default(uuid())
+  name   String // Ex: Vitamina D, Zinco, Magnésio
+  unit   String // Ex: mg, mcg, UI
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  foodMicronutrients FoodMicronutrient[]
+
+  @@unique([name, userId])
+  @@map("micronutrients")
+}
+
+model FoodMicronutrient {
+  id             String        @id @default(uuid())
+  amount         Float
+  foodId         String
+  food           Food          @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  micronutrientId String
+  micronutrient  Micronutrient @relation(fields: [micronutrientId], references: [id], onDelete: Cascade)
+
+  @@unique([foodId, micronutrientId])
+  @@map("food_micronutrients")
+}
+
+model Meal {
+  id          String   @id @default(uuid())
+  name        String   // Ex: Café da Manhã, Almoço, Lanche
+  description String?
+  time        String?  // Horário sugerido: "08:00"
+  order       Int      @default(0)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  mealFoods MealFood[]
+  dietMeals DietMeal[]
+
+  @@map("meals")
+}
+
+model MealFood {
+  id       String @id @default(uuid())
+  quantity Float  // Quantidade em porções
+  notes    String?
+  
+  mealId String
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId String
+  food   Food   @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("meal_foods")
+}
+
+model Diet {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  
+  // Metas diárias
+  targetCalories      Float?
+  targetProteins      Float?
+  targetCarbohydrates Float?
+  targetFats          Float?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  dietMeals DietMeal[]
+  dietDays  DietDay[]
+
+  @@map("diets")
+}
+
+model DietMeal {
+  id      String @id @default(uuid())
+  dietId  String
+  diet    Diet   @relation(fields: [dietId], references: [id], onDelete: Cascade)
+  mealId  String
+  meal    Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  dayOfWeek Int? // 0-6 (Domingo-Sábado), null = todos os dias
+
+  @@map("diet_meals")
+}
+
+model DietDay {
+  id     String   @id @default(uuid())
+  date   DateTime
+  notes  String?
+  dietId String
+  diet   Diet     @relation(fields: [dietId], references: [id], onDelete: Cascade)
+
+  @@unique([dietId, date])
+  @@map("diet_days")
+}
+
+// ==================== TREINOS ====================
+model Exercise {
+  id           String  @id @default(uuid())
+  name         String
+  description  String?
+  muscleGroup  String? // Ex: Peito, Costas, Pernas
+  equipment    String? // Ex: Barra, Halteres, Máquina
+  instructions String?
+  videoUrl     String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  trainingExercises TrainingExercise[]
+
+  @@map("exercises")
+}
+
+model Training {
+  id          String  @id @default(uuid())
+  name        String  // Ex: Treino A - Peito e Tríceps
+  description String?
+  type        String  @default("Hipertrofia") // Tipo do treino
+  isActive    Boolean @default(true)
+  dayOfWeek   Int?    // 0-6 (Domingo-Sábado)
+  duration    Int?    // Duração estimada em minutos
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  trainingExercises TrainingExercise[]
+  trainingSessions  TrainingSession[]
+
+  @@map("trainings")
+}
+
+model TrainingExercise {
+  id            String  @id @default(uuid())
+  sets          Int     // Número de séries
+  reps          String  // Repetições (pode ser "10-12" ou "até falha")
+  restSeconds   Int?    // Descanso entre séries
+  weight        Float?  // Carga sugerida em kg
+  notes         String?
+  order         Int     @default(0)
+  
+  trainingId String
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@map("training_exercises")
+}
+
+model TrainingSession {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  duration    Int?     // Duração real em minutos
+  notes       String?
+  completed   Boolean  @default(false)
+  
+  trainingId String
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  // Relacionamentos
+  sessionExercises SessionExercise[]
+
+  @@map("training_sessions")
+}
+
+model SessionExercise {
+  id          String  @id @default(uuid())
+  sets        Int
+  reps        String
+  weight      Float?
+  notes       String?
+  completed   Boolean @default(false)
+  
+  sessionId  String
+  session    TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseName String // Guardamos o nome para histórico
+
+  @@map("session_exercises")
+}
+
+// ==================== MEDIDAS E EVOLUÇÃO ====================
+model BodyMeasurement {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  
+  // Medidas principais
+  weight      Float?  // kg
+  height      Float?  // cm
+  bodyFat     Float?  // %
+  muscleMass  Float?  // kg
+  
+  // Medidas corporais (cm)
+  chest       Float?
+  waist       Float?
+  hips        Float?
+  leftArm     Float?
+  rightArm    Float?
+  leftThigh   Float?
+  rightThigh  Float?
+  leftCalf    Float?
+  rightCalf   Float?
+  shoulders   Float?
+  neck        Float?
+  
+  notes     String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("body_measurements")
+}
+
+model ProgressImage {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  imageUrl    String
+  category    String?  // Ex: Frontal, Lateral, Costas
+  description String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("progress_images")
+}
