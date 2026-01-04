@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/dist
+**/.next
+
+# Development files
+.git
+.gitignore
+*.md
+!README.md
+
+# IDE
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files (usamos variáveis no docker-compose)
+.env
+.env.*
+!.env.production
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+coverage
+
+# Docker files (não precisamos copiar eles para dentro da imagem)
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Uploads locais
+uploads/*
+generated-pdfs/*
+!uploads/.gitkeep
+!generated-pdfs/.gitkeep

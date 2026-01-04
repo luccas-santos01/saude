@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -20,9 +18,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile.prod
+    image: luccxmsantos/dieta-backend:latest
     container_name: saude_backend
     restart: unless-stopped
     environment:
@@ -39,11 +35,7 @@ services:
       - "3101:3001"
 
   frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile.prod
-      args:
-        NEXT_PUBLIC_API_URL: https://www.luccasdev.com.br/saude/api
+    image: luccxmsantos/dieta-frontend:latest
     container_name: saude_frontend
     restart: unless-stopped
     environment:

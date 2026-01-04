@@ -52,7 +52,11 @@ export const authApi = {
 export const usersApi = {
   getMe: () => api.get('/users/me'),
   updateMe: (data: any) => api.patch('/users/me', data),
+  updateProfile: (data: any) => api.patch('/users/me', data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => 
+    api.patch('/users/me', { password: data.newPassword }),
   deleteMe: () => api.delete('/users/me'),
+  deleteAccount: () => api.delete('/users/me'),
 };
 
 // Foods

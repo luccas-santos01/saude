@@ -63,7 +63,7 @@ export default function DashboardPage() {
         trainingsApi.getAll(),
         trainingsApi.getSessions(10),
         bodyMeasurementsApi.getLatest().catch(() => null),
-        bodyMeasurementsApi.getProgress('weight', 30).catch(() => []),
+        bodyMeasurementsApi.getProgress('weight', 30).catch(() => null),
       ]);
 
       setStats({
